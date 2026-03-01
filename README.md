@@ -34,7 +34,7 @@
 <a name="gui"> </a>
 >## 🖼️ GUI
 - NO installation needed : [Tap to use directly ↗](https://prexecgui.netlify.app)
-  
+- Make sure that you have entered correct profile name !!
 
 ---
 
