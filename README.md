@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="images/title.png">
+<img src="images/prexec.png">
 
 
 >## 🚀 A Python tool to check all Pull Requests created by a GitHub user across all their repositories.
