@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Prexec | GitHub PR Analyzer & Visualizer</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#3c83f6",
+                        "background-light": "#f5f7f8",
+                        "background-dark": "#0f172a",
+                        "card-dark": "#1e293b",
+                        "success": "#10b981",
+                        "danger": "#ef4444",
+                        "warning": "#f59e0b",
+                    },
+                    fontFamily: { "display": ["Inter", "sans-serif"] },
+                },
+            },
+        }
+    </script>
+    <link rel="stylesheet" href="styles.css"/>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen">
+
+    <!-- NAVIGATION -->
+    <header class="border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-background-dark/80 backdrop-blur-xl sticky top-0 z-50">
+        <div class="max-w-[1440px] mx-auto px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-8">
+                <a href="#" id="logoHomeLink" class="flex items-center gap-2.5 no-underline">
+                    <span class="material-symbols-outlined text-primary text-3xl" style="font-variation-settings:'FILL' 1;">query_stats</span>
+                    <h1 class="text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">PREXEC</h1>
+                </a>
+                <nav class="hidden md:flex items-center gap-1">
+                    <a class="nav-link active" href="#" id="navDashboard" style="display:none;">Dashboard</a>
+                </nav>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="hidden sm:flex items-center gap-2 text-xs font-mono bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg">
+                    <span class="w-2 h-2 rounded-full bg-success animate-pulse" id="apiDot"></span>
+                    <span class="text-slate-500">API: <span id="rateLimitBadge">--/60</span></span>
+                </div>
+                <a href="https://github.com/Chintanpatel24/Prexec" target="_blank" rel="noopener" class="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-primary transition-colors">
+                    Source Code <span class="material-symbols-outlined text-[14px]">open_in_new</span>
+                </a>
+                <button class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition-colors" id="btnThemeToggle" title="Toggle theme">
+                    <span class="material-symbols-outlined">dark_mode</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- RATE LIMIT EXCEEDED OVERLAY -->
+    <section class="max-w-[1440px] mx-auto px-6 py-20" id="rateLimitSection" style="display:none;">
+        <div class="max-w-lg mx-auto text-center bg-white dark:bg-card-dark p-10 rounded-2xl border border-warning/30 shadow-xl">
+            <span class="material-symbols-outlined text-7xl text-warning mb-4">timer</span>
+            <h2 class="text-2xl font-bold text-warning mb-2">Rate Limit Exceeded</h2>
+            <p class="text-sm text-slate-400 mb-4">GitHub public API allows 60 requests per hour per IP address.</p>
+            <div class="bg-slate-900 rounded-xl p-6 mb-6">
+                <p class="text-xs text-slate-500 uppercase tracking-widest mb-2">Resets in</p>
+                <p class="text-4xl font-black font-mono text-warning" id="rateLimitCountdown">--:--</p>
+            </div>
+            <p class="text-xs text-slate-500 mb-4">You can also set a personal GitHub token for 5,000 req/hr.</p>
+            <button id="btnRateLimitRetry" class="bg-warning hover:bg-warning/90 text-black px-6 py-2.5 rounded-xl font-bold transition-all inline-flex items-center gap-2">
+                <span class="material-symbols-outlined text-[18px]">refresh</span> Check Again
+            </button>
+        </div>
+    </section>
+
+    <!-- SEARCH SECTION -->
+    <section class="max-w-[1440px] mx-auto px-6 pt-8 pb-4" id="searchSection">
+        <div class="flex flex-col md:flex-row items-end gap-4 p-6 rounded-2xl bg-white dark:bg-card-dark border border-slate-200 dark:border-slate-800 shadow-xl shadow-primary/5">
+            <div class="flex-1 space-y-2 w-full">
+                <label class="text-sm font-semibold text-slate-500 dark:text-slate-400 ml-1">GitHub Username</label>
+                <div class="relative">
+                    <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">alternate_email</span>
+                    <input id="usernameInput" class="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-background-dark focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none text-slate-900 dark:text-slate-100" placeholder="e.g. torvalds" type="text" autocomplete="off" spellcheck="false"/>
+                </div>
+            </div>
+            <div class="flex gap-3 w-full md:w-auto">
+                <button id="btnDeepScan" class="bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-primary/20 flex-1 md:flex-none justify-center">
+                    <span class="material-symbols-outlined text-[20px]">analytics</span> Deep Scan
+                </button>
+                <button id="btnQuickScan" class="bg-slate-800 hover:bg-slate-700 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all border border-slate-600 flex-1 md:flex-none justify-center">
+                    <span class="material-symbols-outlined text-[20px]">search</span> Quick Scan
+                </button>
+            </div>
+        </div>
+        <div class="flex items-center gap-2 mt-3 ml-1 flex-wrap">
+            <span class="text-xs text-slate-400">Created by Chintan Patel under the MIT License</span>
+            <span class="text-[10px] text-slate-500 ml-2">Public API: 60 req/hr</span>
+        </div>
+    </section>
+
+    <!-- LOADING -->
+    <section class="max-w-[1440px] mx-auto px-6 py-20" id="loadingSection" style="display:none;">
+        <div class="max-w-md mx-auto text-center">
+            <div class="relative w-20 h-20 mx-auto mb-8">
+                <div class="absolute inset-0 rounded-full border-4 border-primary/20"></div>
+                <div class="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+                <span class="material-symbols-outlined absolute inset-0 flex items-center justify-center text-primary text-2xl" style="font-variation-settings:'FILL' 1;">query_stats</span>
+            </div>
+            <h2 class="text-xl font-bold mb-4" id="loadingTitle">Analyzing Pull Requests</h2>
+            <div class="space-y-3 text-left max-w-xs mx-auto mb-6">
+                <div class="phase-item" id="lPhase1"><span class="material-symbols-outlined text-sm mr-2 text-slate-500">hourglass_empty</span><span class="text-sm text-slate-400">Verifying GitHub user...</span></div>
+                <div class="phase-item" id="lPhase2"><span class="material-symbols-outlined text-sm mr-2 text-slate-500">hourglass_empty</span><span class="text-sm text-slate-400">Fetching pull requests...</span></div>
+                <div class="phase-item" id="lPhase3"><span class="material-symbols-outlined text-sm mr-2 text-slate-500">hourglass_empty</span><span class="text-sm text-slate-400">Categorizing & analyzing...</span></div>
+                <div class="phase-item" id="lPhase4"><span class="material-symbols-outlined text-sm mr-2 text-slate-500">hourglass_empty</span><span class="text-sm text-slate-400">Building visualizations...</span></div>
+            </div>
+            <div class="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                <div class="h-full bg-gradient-to-r from-primary to-success rounded-full transition-all duration-500" id="loadingBar" style="width:0%"></div>
+            </div>
+            <p class="text-xs text-slate-500 mt-3 font-mono" id="loadingStatus">Initializing...</p>
+        </div>
+    </section>
+
+    <!-- ERROR -->
+    <section class="max-w-[1440px] mx-auto px-6 py-20" id="errorSection" style="display:none;">
+        <div class="max-w-md mx-auto text-center bg-white dark:bg-card-dark p-8 rounded-2xl border border-red-500/20">
+            <span class="material-symbols-outlined text-6xl text-danger mb-4">error</span>
+            <h2 class="text-xl font-bold text-danger mb-2" id="errorTitle">Error</h2>
+            <p class="text-sm text-slate-500 mb-6" id="errorMessage">Something went wrong</p>
+            <button id="btnRetry" class="bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-xl font-bold transition-all inline-flex items-center gap-2">
+                <span class="material-symbols-outlined text-[18px]">refresh</span> Try Again
+            </button>
+        </div>
+    </section>
+
+    <!-- RESULTS -->
+    <div id="resultsSection" style="display:none;">
+
+        <!-- User Profile -->
+        <section class="max-w-[1440px] mx-auto px-6 pt-6 pb-2">
+            <div class="flex items-center gap-6 p-6 rounded-2xl bg-white dark:bg-card-dark border border-slate-200 dark:border-slate-800">
+                <img id="userAvatar" src="" alt="" class="w-16 h-16 rounded-full ring-2 ring-primary/30 shadow-lg"/>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-3 flex-wrap">
+                        <h2 class="text-xl font-bold truncate" id="userName">--</h2>
+                        <span class="text-sm font-mono text-primary" id="userLogin">@--</span>
+                    </div>
+                    <p class="text-sm text-slate-500 truncate mt-0.5" id="userBio"></p>
+                    <div class="flex items-center gap-4 mt-2 text-xs text-slate-400 flex-wrap">
+                        <span id="userLocation" class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">location_on</span>--</span>
+                        <span id="userRepos" class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">folder</span>-- repos</span>
+                        <span id="userFollowers" class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">group</span>-- followers</span>
+                        <span id="userJoined" class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">calendar_today</span>Joined --</span>
+                    </div>
+                </div>
+                <a id="userGithubLink" href="#" target="_blank" rel="noopener" class="hidden sm:flex items-center gap-2 text-sm font-semibold text-primary hover:underline flex-shrink-0">
+                    View Profile <span class="material-symbols-outlined text-sm">open_in_new</span>
+                </a>
+            </div>
+        </section>
+
+        <div class="max-w-[1440px] mx-auto px-6 py-6 flex gap-6">
+
+            <!-- SIDEBAR -->
+            <aside class="w-64 flex-shrink-0 hidden lg:block space-y-6">
+                <div class="bg-white dark:bg-card-dark p-5 rounded-2xl border border-slate-200 dark:border-slate-800">
+                    <h3 class="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-4">Quick Stats</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center text-sm"><span class="text-slate-500">Top Repository</span><span class="font-semibold text-primary truncate ml-2 max-w-[120px]" id="sideTopRepo">--</span></div>
+                        <div class="flex justify-between items-center text-sm"><span class="text-slate-500">Draft PRs</span><span class="font-semibold" id="sideDraft">0</span></div>
+                        <div class="flex justify-between items-center text-sm"><span class="text-slate-500">Stale PRs (>180d)</span><span class="font-semibold text-warning" id="sideStale">0</span></div>
+                        <div class="flex justify-between items-center text-sm"><span class="text-slate-500">Active Years</span><span class="font-semibold" id="sideYears">0</span></div>
+                    </div>
+                </div>
+                <div class="bg-white dark:bg-card-dark p-5 rounded-2xl border border-slate-200 dark:border-slate-800">
+                    <h3 class="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-4">Export Report</h3>
+                    <div class="space-y-2">
+                        <button id="btnExportJSON" class="export-btn"><span class="material-symbols-outlined text-sm">data_object</span> Export JSON</button>
+                        <button id="btnExportCSV" class="export-btn"><span class="material-symbols-outlined text-sm">table_chart</span> Export CSV</button>
+                        <button id="btnExportMD" class="export-btn"><span class="material-symbols-outlined text-sm">description</span> Export Markdown</button>
+                    </div>
+                </div>
+                <button id="btnNewScan" class="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 px-4 py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-colors border border-slate-200 dark:border-slate-700">
+                    <span class="material-symbols-outlined text-[18px]">refresh</span> New Scan
+                </button>
+            </aside>
+
+            <!-- MAIN -->
+            <main class="flex-1 min-w-0 space-y-6">
+
+                <!-- Metrics -->
+                <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3">
+                    <div class="metric-card text-center"><div class="flex justify-center items-center mb-2"><span class="material-symbols-outlined metric-icon text-primary" style="font-variation-settings:'FILL' 1;">list_alt</span></div><p class="metric-label">Total PRs</p><h3 class="metric-value" id="metricTotal">0</h3></div>
+                    <div class="metric-card text-center"><div class="flex justify-center items-center mb-2"><span class="material-symbols-outlined metric-icon text-success" style="font-variation-settings:'FILL' 1;">call_merge</span></div><p class="metric-label">Merged</p><h3 class="metric-value text-success" id="metricMerged">0</h3></div>
+                    <div class="metric-card text-center"><div class="flex justify-center items-center mb-2"><span class="material-symbols-outlined metric-icon text-warning" style="font-variation-settings:'FILL' 1;">schedule</span></div><p class="metric-label">Pending</p><h3 class="metric-value text-warning" id="metricPending">0</h3></div>
+                    <div class="metric-card text-center"><div class="flex justify-center items-center mb-2"><span class="material-symbols-outlined metric-icon text-danger" style="font-variation-settings:'FILL' 1;">cancel</span></div><p class="metric-label">Closed</p><h3 class="metric-value text-danger" id="metricClosed">0</h3></div>
+                    <div class="metric-card text-center ring-1 ring-primary/20 col-span-2 sm:col-span-1"><p class="text-xs font-semibold text-primary mb-1">Acceptance Rate</p><h3 class="text-2xl font-black text-primary" id="metricAcceptance">0%</h3><div class="mt-2 h-1.5 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden"><div class="h-full bg-primary rounded-full transition-all duration-1000" id="acceptanceBar" style="width:0%"></div></div></div>
+                </div>
+
+                <!-- Productivity -->
+                <div class="bg-white dark:bg-card-dark p-6 rounded-2xl border border-slate-200 dark:border-slate-800">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 class="font-bold text-lg">Brain Power / Productivity Index</h3>
+                            <p class="text-xs text-slate-500 mt-0.5">Profit/Loss style · Above 50% baseline = green, below = red</p>
+                        </div>
+                        <div class="flex gap-3">
+                            <span class="flex items-center gap-1.5 text-[11px] font-semibold text-success"><span class="w-2 h-2 rounded-full bg-success"></span>Profit</span>
+                            <span class="flex items-center gap-1.5 text-[11px] font-semibold text-danger"><span class="w-2 h-2 rounded-full bg-danger"></span>Loss</span>
+                        </div>
+                    </div>
+                    <div class="h-[250px] relative">
+                        <canvas id="productivityCanvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Status + Types -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white dark:bg-card-dark p-6 rounded-2xl border border-slate-200 dark:border-slate-800">
+                        <h3 class="font-bold mb-6">PR Status Distribution</h3>
+                        <div class="flex items-center justify-center h-52 relative">
+                            <svg class="w-44 h-44" viewBox="0 0 36 36" id="statusDonut"><circle cx="18" cy="18" r="15.915" fill="none" stroke-width="3.5" stroke="#1e293b" opacity="0.3"></circle></svg>
+                            <div class="absolute flex flex-col items-center"><span class="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Total</span><span class="text-2xl font-black" id="donutTotal">0</span></div>
+                        </div>
+                        <div class="flex justify-center gap-5 mt-2 text-[11px] font-semibold uppercase tracking-wider">
+                            <div class="flex items-center gap-1.5"><div class="w-2.5 h-2.5 rounded-full bg-success"></div><span class="text-slate-400">Merged</span></div>
+                            <div class="flex items-center gap-1.5"><div class="w-2.5 h-2.5 rounded-full bg-primary"></div><span class="text-slate-400">Open</span></div>
+                            <div class="flex items-center gap-1.5"><div class="w-2.5 h-2.5 rounded-full bg-slate-400"></div><span class="text-slate-400">Closed</span></div>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-card-dark p-6 rounded-2xl border border-slate-200 dark:border-slate-800">
+                        <h3 class="font-bold mb-6">PR Types Distribution</h3>
+                        <div class="space-y-3" id="typesBars"></div>
+                    </div>
+                </div>
+
+                <!-- Tools + Monthly Trend -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white dark:bg-card-dark p-6 rounded-2xl border border-slate-200 dark:border-slate-800">
+                        <h3 class="font-bold mb-6">Tools Used to Create PRs</h3>
+                        <div class="flex items-center justify-around py-4">
+                            <div class="relative w-40 h-40">
+                                <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36" id="toolsDonut"><circle cx="18" cy="18" r="16" fill="transparent" stroke="#1e293b" stroke-width="3.5"></circle></svg>
+                                <div class="absolute inset-0 flex flex-col items-center justify-center"><span class="text-xl font-black" id="toolsDonutCenter">0</span><span class="text-[9px] text-slate-500 uppercase font-bold">Tools</span></div>
+                            </div>
+                            <div class="space-y-2.5" id="toolsLegend"></div>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-card-dark p-6 rounded-2xl border border-slate-200 dark:border-slate-800">
+                        <h3 class="font-bold mb-4">Monthly PR Trend</h3>
+                        <p class="text-xs text-slate-500 mb-4">Green = increase from previous month · Red = decrease</p>
+                        <div class="h-[200px] relative">
+                            <canvas id="monthlyCanvas"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contribution Heatmap -->
+                <div class="bg-white dark:bg-card-dark p-6 rounded-2xl border border-slate-200 dark:border-slate-800">
+                    <div class="flex justify-between items-start mb-4 flex-wrap gap-3">
+                        <div>
+                            <h3 class="font-bold">Contribution Activity</h3>
+                            <p class="text-xs text-slate-500">GitHub contributions (green) · PR activity (orange)</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-sm font-semibold" id="heatmapTotalContrib"></span>
+                            <div class="relative">
+                                <select id="heatmapYearSelect" class="text-xs px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-background-dark text-slate-900 dark:text-slate-100 outline-none appearance-none pr-7 cursor-pointer">
+                                    <option value="last">Last 12 months</option>
+                                </select>
+                                <span class="material-symbols-outlined absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 text-[14px] pointer-events-none">expand_more</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto pb-2" id="heatmapContainer"></div>
+                    <div class="flex flex-wrap justify-between items-center gap-3 mt-3 text-[10px] text-slate-500">
+                        <div class="flex items-center gap-4">
+                            <div class="flex items-center gap-1.5">
+                                <span>Contributions</span>
+                                <div class="flex gap-0.5">
+                                    <div class="w-2.5 h-2.5 rounded-sm" style="background:#161b22"></div>
+                                    <div class="w-2.5 h-2.5 rounded-sm" style="background:#0e4429"></div>
+                                    <div class="w-2.5 h-2.5 rounded-sm" style="background:#006d32"></div>
+                                    <div class="w-2.5 h-2.5 rounded-sm" style="background:#26a641"></div>
+                                    <div class="w-2.5 h-2.5 rounded-sm" style="background:#39d353"></div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <span>PRs</span>
+                                <div class="flex gap-0.5">
+                                    <div class="w-2.5 h-2.5 rounded-sm" style="background:#161b22"></div>
+                                    <div class="w-2.5 h-2.5 rounded-sm" style="background:#5a3000"></div>
+                                    <div class="w-2.5 h-2.5 rounded-sm" style="background:#8a5100"></div>
+                                    <div class="w-2.5 h-2.5 rounded-sm" style="background:#c27800"></div>
+                                    <div class="w-2.5 h-2.5 rounded-sm" style="background:#f59e0b"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <span>Less</span>
+                            <span class="text-slate-600">&mdash;</span>
+                            <span>More</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Yearly Contributions -->
+                <div class="bg-white dark:bg-card-dark p-6 rounded-2xl border border-slate-200 dark:border-slate-800">
+                    <h3 class="font-bold mb-4">Yearly Contributions</h3>
+                    <div class="h-[220px] relative">
+                        <canvas id="yearlyCanvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Top Repositories -->
+                <div class="bg-white dark:bg-card-dark p-6 rounded-2xl border border-slate-200 dark:border-slate-800">
+                    <h3 class="font-bold mb-6">Top Repositories</h3>
+                    <div class="space-y-4" id="topReposDetailed"></div>
+                </div>
+
+                <!-- PR Table -->
+                <div class="bg-white dark:bg-card-dark rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden" id="prTableSection" style="display:none;">
+                    <div class="p-5 border-b border-slate-200 dark:border-slate-800">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+                            <h3 class="font-bold text-lg">Detailed Pull Requests</h3>
+                        </div>
+                        <div class="flex gap-2 flex-wrap">
+                            <div class="relative">
+                                <select id="tblFilterStatus" class="tbl-select appearance-none pr-8">
+                                    <option value="all">All Status</option>
+                                    <option value="merged">✅ Merged</option>
+                                    <option value="open">⏳ Pending</option>
+                                    <option value="closed">❌ Closed</option>
+                                </select>
+                                <span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 text-sm pointer-events-none">expand_more</span>
+                            </div>
+                            <div class="relative">
+                                <select id="tblFilterType" class="tbl-select appearance-none pr-8">
+                                    <option value="all">All Types</option>
+                                </select>
+                                <span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 text-sm pointer-events-none">expand_more</span>
+                            </div>
+                            <div class="relative flex-1 min-w-[200px]">
+                                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">search</span>
+                                <input id="tblSearch" type="text" placeholder="Search by title, repo, #number..." class="tbl-select pl-9 w-full" list="prSuggestions"/>
+                                <datalist id="prSuggestions"></datalist>
+                            </div>
+                            <div class="relative">
+                                <select id="tblFilterRepo" class="tbl-select appearance-none pr-8">
+                                    <option value="all">All Repos</option>
+                                </select>
+                                <span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 text-sm pointer-events-none">expand_more</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead>
+                                <tr class="bg-slate-50 dark:bg-slate-900/50 text-[11px] uppercase tracking-widest text-slate-500">
+                                    <th class="px-5 py-3 font-semibold">PR Title & Number</th>
+                                    <th class="px-5 py-3 font-semibold">Status</th>
+                                    <th class="px-5 py-3 font-semibold">Type</th>
+                                    <th class="px-5 py-3 font-semibold">Tool</th>
+                                    <th class="px-5 py-3 font-semibold">Date</th>
+                                    <th class="px-5 py-3 font-semibold text-right">Link</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 dark:divide-slate-800" id="prTableBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="px-5 py-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                        <span class="text-sm text-slate-500" id="tblInfo">--</span>
+                        <div class="flex gap-2">
+                            <button id="tblPrev" class="px-3 py-1 border border-slate-200 dark:border-slate-700 rounded text-sm hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40" disabled>Previous</button>
+                            <button id="tblNext" class="px-3 py-1 bg-primary text-white rounded text-sm hover:bg-primary/90 disabled:opacity-40">Next</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mobile Export -->
+                <div class="lg:hidden flex gap-2 flex-wrap">
+                    <button id="btnExportJSON2" class="export-btn flex-1"><span class="material-symbols-outlined text-sm">data_object</span>JSON</button>
+                    <button id="btnExportCSV2" class="export-btn flex-1"><span class="material-symbols-outlined text-sm">table_chart</span>CSV</button>
+                    <button id="btnExportMD2" class="export-btn flex-1"><span class="material-symbols-outlined text-sm">description</span>MD</button>
+                    <button id="btnNewScan2" class="export-btn flex-1 !border-primary/30 !text-primary"><span class="material-symbols-outlined text-sm">refresh</span>New</button>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="max-w-[1440px] mx-auto px-6 py-8 border-t border-slate-200 dark:border-slate-800 mt-8">
+        <div class="flex flex-col md:flex-row justify-between items-center gap-4 text-slate-500 text-sm">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary" style="font-variation-settings:'FILL' 1;">query_stats</span>
+                <span class="font-bold text-slate-900 dark:text-white">PREXEC</span>
+                <span>· GitHub PR Analyzer</span>
+            </div>
+            <span class="text-xs text-slate-400">100% Client-Side · No Backend · Public API · 60 req/hr</span>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

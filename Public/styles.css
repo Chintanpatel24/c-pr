@@ -1,0 +1,132 @@
+body { font-family: 'Inter', sans-serif; }
+.material-symbols-outlined { font-size: 20px; }
+
+.nav-link {
+    @apply text-sm font-medium px-3 py-1.5 rounded-lg transition-colors;
+    color: #94a3b8;
+}
+.nav-link:hover { color: #3c83f6; background: rgba(60,131,246,0.05); }
+.nav-link.active { color: #3c83f6; font-weight: 600; background: rgba(60,131,246,0.1); }
+
+.hint-chip {
+    @apply text-xs font-mono px-2.5 py-1 rounded-lg border transition-all cursor-pointer;
+    color: #94a3b8; background: transparent; border-color: #334155;
+}
+.hint-chip:hover { color: #3c83f6; border-color: #3c83f6; background: rgba(60,131,246,0.05); }
+
+.metric-card {
+    @apply p-5 rounded-2xl border transition-all;
+    background: white; border-color: #e2e8f0;
+}
+.dark .metric-card { background: #1e293b; border-color: #334155; }
+.metric-card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(60,131,246,0.08); }
+.metric-label { @apply text-xs font-semibold uppercase tracking-wider; color: #94a3b8; }
+.metric-value { @apply text-2xl font-black mt-1; }
+.metric-icon { @apply text-lg p-1.5 rounded-lg; background: rgba(60,131,246,0.1); }
+.metric-icon.text-success { background: rgba(16,185,129,0.1); }
+.metric-icon.text-warning { background: rgba(245,158,11,0.1); }
+.metric-icon.text-danger { background: rgba(239,68,68,0.1); }
+
+.export-btn {
+    @apply w-full text-left text-sm font-medium px-3 py-2.5 rounded-xl border flex items-center gap-2 transition-all;
+    color: #94a3b8; background: transparent; border-color: #334155;
+}
+.export-btn:hover { color: #3c83f6; border-color: rgba(60,131,246,0.3); background: rgba(60,131,246,0.05); }
+
+.tbl-select {
+    @apply text-xs px-3 py-2 rounded-lg border outline-none transition-colors;
+    border-color: #e2e8f0; color: #1e293b; background: #f8fafc;
+}
+.dark .tbl-select {
+    background: #0f172a; border-color: #334155; color: #e2e8f0;
+}
+.tbl-select:focus { border-color: #3c83f6; }
+
+.phase-item { @apply flex items-center; }
+.phase-item.done .material-symbols-outlined { color: #10b981 !important; }
+.phase-item.done span:last-child { color: #10b981; }
+.phase-item.active .material-symbols-outlined { color: #3c83f6 !important; animation: pulse 1s infinite; }
+.phase-item.active span:last-child { color: #e2e8f0; }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+
+/* GitHub Contribution Heatmap */
+.gh-heatmap {
+    display: flex;
+    gap: 3px;
+    overflow-x: visible;
+}
+.gh-week {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+.gh-cell {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    cursor: default;
+    position: relative;
+    transition: transform 0.1s ease;
+    outline: 1px solid rgba(27, 31, 35, 0.06);
+}
+.dark .gh-cell {
+    outline: 1px solid rgba(255, 255, 255, 0.05);
+}
+.gh-cell:hover {
+    transform: scale(1.8);
+    z-index: 20;
+    outline: 2px solid rgba(60, 131, 246, 0.6);
+}
+.gh-day-label {
+    height: 12px;
+    font-size: 9px;
+    line-height: 12px;
+    color: #64748b;
+    user-select: none;
+}
+.gh-month-label {
+    font-size: 10px;
+    color: #64748b;
+    user-select: none;
+    white-space: nowrap;
+}
+#heatmapContainer {
+    overflow-x: auto;
+    padding-bottom: 4px;
+}
+#heatmapContainer::-webkit-scrollbar { height: 4px; }
+#heatmapContainer::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
+
+.bar-row { @apply space-y-1; }
+.bar-row .bar-header { @apply flex justify-between text-sm; }
+.bar-row .bar-label { @apply font-medium; color: #334155; }
+.dark .bar-row .bar-label { color: #cbd5e1; }
+.bar-row .bar-value { @apply font-bold text-xs; color: #94a3b8; }
+.bar-row .bar-track { @apply h-2 w-full rounded-full overflow-hidden; background: #e2e8f0; }
+.dark .bar-row .bar-track { background: #1e293b; }
+.bar-row .bar-fill { @apply h-full rounded-full transition-all duration-1000; }
+
+.status-pill { @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider; }
+.status-merged { background: rgba(16,185,129,0.15); color: #10b981; }
+.status-open { background: rgba(60,131,246,0.15); color: #3c83f6; }
+.status-closed { background: rgba(239,68,68,0.15); color: #ef4444; }
+
+.type-chip { @apply text-[11px] font-semibold px-2 py-0.5 rounded border; }
+
+.repo-detail-card {
+    @apply p-4 rounded-xl border transition-all;
+    background: #f8fafc; border-color: #e2e8f0;
+}
+.dark .repo-detail-card {
+    background: rgba(15,23,42,0.5); border-color: #334155;
+}
+.repo-detail-card:hover { border-color: rgba(60,131,246,0.3); }
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #3c83f6; }
+
+@keyframes slideUp { from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)} }
+@keyframes counterPop { 0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)} }
+.counter-pop { animation: counterPop 0.3s ease; }
